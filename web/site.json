@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "name": "cleanserp",
+  "github": "https://github.com/SuperMarioYL/cleanserp",
+  "host": "cleanserp.lei6393.com",
+  "lang": { "primary": "zh", "toggle": true },
+  "accent": ["#e6a144", "#f0c060", "#ff7847"],
+  "meta": { "content_version": 1, "generated_at": "2026-08-22T08:40:00Z", "web_factory_ref": "v1" },
+  "hero": {
+    "eyebrow": { "zh": "零配置 · 无需账号 · 装上即用", "en": "Zero Config · No Account · Install & Go" },
+    "headline": { "zh": "搜一次，\n直接看到可读的源", "en": "Search once,\nsee what's actually worth reading" },
+    "sub": { "zh": "百度/搜狗每次搜索平均要点开 5+ 个营销号、百家号 AI 文、付费墙死链才能找到一个可读源。净搜在搜索结果页直接隐藏它们。", "en": "Every Baidu/Sogou search forces you through 5+ marketing pages, AI-generated articles, and paywall dead-links before a real source. CleanSERP hides them right on the results page." },
+    "command": null,
+    "cta": { "zh": "从 Chrome 商店安装", "en": "Install from Chrome Store" },
+    "ctaGithub": { "zh": "查看源码", "en": "View on GitHub" },
+    "scroll": { "zh": "了解净化规则", "en": "See how it filters" }
+  },
+  "advantages": [
+    {
+      "title": { "zh": "搜索页直接过滤，不用多点 5 次", "en": "Filtered on the results page, not after 5 dead clicks" },
+      "body": { "zh": "在百度/搜狗搜索结果加载时实时识别并隐藏营销号、百家号 AI 文、付费墙死链——你看到的第一屏就是干净的可读源。", "en": "Identifies and hides marketing accounts, AI-generated articles, and paywall dead-links as search results load — the first page you see is already clean." },
+      "chips": ["› 百度搜索净化", "› 搜狗搜索净化", "› 营销号过滤", "› 百家号AI文过滤", "› 付费墙死链过滤"]
+    },
+    {
+      "title": { "zh": "装上即用，不换引擎不注册", "en": "Install and go — no engine switch, no sign-up" },
+      "body": { "zh": "继续用百度/搜狗搜索，不需要切换到其他引擎，不需要注册账号，不需要配置任何规则。安装扩展后刷新搜索页即生效。", "en": "Keep using Baidu/Sogou — no engine switch, no account, no rules to configure. Install the extension, reload the search page, and it works." },
+      "chips": ["› 零配置", "› 无账号", "› 无需换引擎"]
+    },
+    {
+      "title": { "zh": "每页告诉你过滤了多少条", "en": "Tells you exactly how many it filtered" },
+      "body": { "zh": "搜索页顶部显示「净搜已过滤 N 条」标记，工具栏图标显示当前标签页过滤数——过滤透明，不是黑箱。", "en": "A badge on the search page shows how many results were filtered, and the toolbar icon shows the count for the current tab — transparent, not a black box." },
+      "chips": ["› 过滤计数", "› 工具栏徽标", "› 弹窗详情"]
+    }
+  ],
+  "scene": { "kind": "particle-field" },
+  "cta": {
+    "headline": { "zh": "装上净搜，还搜索一个干净", "en": "Install CleanSERP — give search back its signal" },
+    "sub": { "zh": "MIT 开源，免费使用。Chrome 浏览器扩展，本地运行。", "en": "MIT open source, free to use. Chrome browser extension, runs locally." },
+    "button": { "zh": "从 GitHub 开始", "en": "Get it on GitHub" }
+  },
+  "footer": {
+    "tag": { "zh": "MIT 开源 · 本地运行 · 无需账号", "en": "MIT Open Source · Runs Locally · No Account Needed" }
+  }
+}
