@@ -1,0 +1,24 @@
+{
+  "manifest_version": 3,
+  "name": "净搜 CleanSERP",
+  "version": "0.1.0",
+  "description": "零配置百度/搜狗搜索净化扩展，隐藏营销号、百家号AI文与付费墙死链。",
+  "icons": { "128": "icons/icon-128.png" },
+  "action": {
+    "default_popup": "src/popup/popup.html",
+    "default_icon": { "128": "icons/icon-128.png" }
+  },
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://www.baidu.com/s*", "*://www.baidu.com/*", "*://m.baidu.com/*"],
+      "js": ["src/content/serp-filter.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "permissions": ["storage"],
+  "host_permissions": ["*://www.baidu.com/*", "*://m.baidu.com/*"]
+}

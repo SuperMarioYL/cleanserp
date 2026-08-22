@@ -1,0 +1,35 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-dist:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - run: npm ci
+      - run: npm run build
+
+      # Stage a load-unpacked zip + checksums into dist/ for the release.
+      - run: |
+          version="$(node -p "require('./package.json').version")"
+          mkdir -p dist-release
+          (cd dist && zip -r "../dist-release/cleanserp-v${version}.zip" .)
+          (cd dist-release && sha256sum cleanserp-v${version}.zip > checksums.txt)
+          mv dist-release/* dist/
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: |
+            dist/cleanserp-v*.zip
+            dist/checksums.txt

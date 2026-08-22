@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>净搜 CleanSERP</title>
+    <link rel="stylesheet" href="./popup.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="head">
+        <span class="logo" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="7"></circle>
+            <line x1="21" y1="21" x2="16.5" y2="16.5"></line>
+          </svg>
+        </span>
+        <span class="title">净搜 CleanSERP</span>
+      </header>
+
+      <section class="count" id="count">
+        <div class="num" id="count-num">0</div>
+        <div class="lab">本次已过滤</div>
+      </section>
+
+      <section class="status">
+        <span class="dot" id="status-dot"></span>
+        <span id="status-text">读取中…</span>
+      </section>
+
+      <!-- m2 存根：on/off 开关属于 m2 范围，v0.1 显示路线图提示而非可用开关 -->
+      <button class="toggle" id="toggle" type="button" disabled>
+        <span class="track"><span class="thumb"></span></span>
+        <span class="toggle-label">开关 · v0.2 上线</span>
+      </button>
+
+      <p class="muted">
+        百度 SERP 净化已开启。搜狗支持与开关将于 v0.2 上线，详见
+        <a href="https://github.com/SuperMarioYL/cleanserp#路线图" id="roadmap-link">路线图</a>。
+      </p>
+
+      <footer class="foot"><sub>MIT © 2026 SuperMarioYL</sub></footer>
+    </div>
+    <script src="./popup.js"></script>
+  </body>
+</html>

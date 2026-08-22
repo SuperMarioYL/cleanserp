@@ -1,0 +1,22 @@
+{
+  "name": "cleanserp",
+  "version": "0.1.0",
+  "description": "净搜 CleanSERP — 零配置百度/搜狗 SERP 净化扩展（隐藏营销号、百家号AI文与付费墙死链）",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "author": "SuperMarioYL",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "gen:assets": "node scripts/gen-assets.mjs",
+    "build": "node scripts/build.mjs",
+    "test": "node scripts/build.mjs && node --test dist/tests/serp-filter.test.cjs",
+    "ci": "npm run typecheck && npm run build && npm run test"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.270",
+    "@types/node": "^22.0.0",
+    "esbuild": "^0.21.0",
+    "typescript": "^5.4.0"
+  }
+}
