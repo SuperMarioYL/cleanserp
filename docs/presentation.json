@@ -1,0 +1,78 @@
+{
+  "name": "cleanserp",
+  "tagline": "Filter search results before opening every link.",
+  "architecture": {
+    "title": "How CleanSERP works",
+    "nodes": [
+      {
+        "title": "Baidu DOM",
+        "detail": "src/lib/serp-dom.ts"
+      },
+      {
+        "title": "Rule classifier",
+        "detail": "src/content/rules.ts"
+      },
+      {
+        "title": "Content script",
+        "detail": "src/content/serp-filter.ts"
+      },
+      {
+        "title": "Popup state",
+        "detail": "service worker + popup"
+      }
+    ],
+    "edges": [
+      [
+        0,
+        1
+      ],
+      [
+        1,
+        2
+      ],
+      [
+        2,
+        3
+      ]
+    ]
+  },
+  "process": {
+    "title": "From input to a useful result",
+    "steps": [
+      {
+        "title": "Read result",
+        "detail": "Title, URL and snippet"
+      },
+      {
+        "title": "Apply rules",
+        "detail": "Explicit local heuristics"
+      },
+      {
+        "title": "Return verdict",
+        "detail": "Usable or rule reason"
+      }
+    ],
+    "result": "The documentation result is usable; the listicle and login-wall examples match explicit rules."
+  },
+  "integrations": {
+    "title": "Supported input and output routes",
+    "items": [
+      {
+        "title": "Baidu pages",
+        "detail": "Manifest content-script matches"
+      },
+      {
+        "title": "Result fields",
+        "detail": "URL, title, snippet and source"
+      },
+      {
+        "title": "Chrome storage",
+        "detail": "Per-tab filtering state"
+      },
+      {
+        "title": "MV3 bundle",
+        "detail": "Load unpacked from dist/"
+      }
+    ]
+  }
+}

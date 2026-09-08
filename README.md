@@ -1,151 +1,125 @@
-<div align="right"><sub>[English](./README.en.md)&nbsp;&nbsp;⇄&nbsp;&nbsp;<b>简体中文</b></sub></div>
+[English](./README.en.md) · [Website](https://cleanserp.lei6393.com) · [GitHub](https://github.com/SuperMarioYL/cleanserp)
 
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./assets/hero-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="./assets/hero-light.svg">
-  <img src="./assets/hero-light.svg" width="880" alt="净搜 CleanSERP — 零配置百度/搜狗 SERP 净化扩展">
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="./assets/presentation/hero-mobile-dark.svg">
+  <source media="(max-width: 600px)" srcset="./assets/presentation/hero-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/presentation/hero-dark.svg">
+  <img src="./assets/presentation/hero-light.svg" width="960" alt="Hero diagram">
 </picture>
 
-<p align="center"><sub>净搜是面向中文搜索用户的零配置 SERP 净化层，一键隐藏营销号死链。</sub></p>
+# cleanserp
 
-<p align="center">
-  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue" alt="license"></a>
-  <a href="https://github.com/SuperMarioYL/cleanserp/releases"><img src="https://img.shields.io/github/v/release/SuperMarioYL/cleanserp?label=release" alt="release"></a>
-  <img src="https://img.shields.io/github/actions/workflow/status/SuperMarioYL/cleanserp/ci.yml?branch=main&label=CI" alt="CI">
-  <img src="https://img.shields.io/badge/TypeScript-5.4-3178c6" alt="TypeScript">
-  <img src="https://img.shields.io/badge/Chrome-MV3-0071E3" alt="Chrome MV3">
-  <img src="https://img.shields.io/badge/零配置-zero--config-10A37F" alt="零配置">
-</p>
+**点开链接之前，先筛掉命中规则的结果。**
 
-**百度/搜狗每次搜索要点开 5+ 个营销号、百家号 AI 文、付费墙死链才能找到一个可读源——净搜装上即用，无需账号、无需换引擎。**
+净搜对已渲染的百度搜索结果应用本地启发式规则，隐藏命中的卡片，并显示过滤数量。
 
-## 目录
+## 为什么需要它
 
-- [为什么做这个](#为什么做这个)
-- [架构](#架构)
-- [安装](#安装)
-- [快速开始](#快速开始)
-- [用法](#用法)
-- [Demo](#demo)
-- [配置](#配置)
-- [Pro 付费层](#pro-付费层)
-- [路线图](#路线图)
-- [许可与贡献](#许可与贡献)
+搜索摘要中已有推广标记、登录提示和跳转链接等信号。净搜根据这些可见信息减少重复筛选，规则可以直接检查和修改。
 
-## 为什么做这个
-
-百度/搜狗 SERP 已被百家号 AI 文与营销号死链淹没，每次搜索平均要点开 5+ 个无效结果才能找到一个可读源。uBlock 只隐藏广告位，不动有机结果里的垃圾内容；Kagi 要换引擎 + 付费。净搜在你现有的百度上叠加一层**零配置的内容质量过滤**——装上即用，只留下可读源，顶部一枚「净搜已过滤 N 条」徽章告诉你今天清掉了多少噪声。
+- **本地分类** — 无需 API 调用即可分类可见结果字段。
+- **可检查的原因** — 命中结果带有具体规则类别。
+- **沿用搜索页面** — content script 直接作用于已有百度结果页。
 
 ## 架构
 
-<h2><img src="https://api.iconify.design/tabler/topology-star-3.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 架构</h2>
-
-净搜是单扩展进程：content script 解析已渲染的百度 SERP，把每条结果交给启发式死链分类器（rules.ts），命中四类死链的卡片被即时隐藏，顶部注入过滤徽章；service worker 按页签存计数，popup 显示本次过滤数。规则集独立可替换，为后续 Pro 自定义规则预留接口。
-
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="./assets/atlas-dark.svg">
-  <source media="(prefers-color-scheme: light)" srcset="./assets/atlas-light.svg">
-  <img src="./assets/atlas-light.svg" width="880" alt="架构：百度 SERP → 死链分类器 → 净化结果+徽章 → popup 计数">
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="./assets/presentation/architecture-mobile-dark.svg">
+  <source media="(max-width: 600px)" srcset="./assets/presentation/architecture-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/presentation/architecture-dark.svg">
+  <img src="./assets/presentation/architecture-light.svg" width="960" alt="Architecture diagram">
 </picture>
 
-分类器原语是规则组合（非 ML），对每条结果给出 `usable` / `dead-end` 判定 + 死链原因：
+content script 提取结果字段并调用纯函数 classify，隐藏命中卡片，再把计数传给扩展界面。当前 manifest 只向百度页面注入脚本；类型定义出现其他引擎并不等于已支持。
 
-```typescript
-type DeadEndReason = "baijiahao-ai-slop" | "yingxiaohao" | "paywall" | "redirect-middlepage";
-function classify(r: SerpResult): { verdict: Verdict; reason?: DeadEndReason };
-```
+| 组件 | 职责 |
+| --- | --- |
+| `Baidu DOM` | src/lib/serp-dom.ts |
+| `Rule classifier` | src/content/rules.ts |
+| `Content script` | src/content/serp-filter.ts |
+| `Popup state` | service worker + popup |
 
-## 安装
+## 安装与快速上手
 
-<h2><img src="https://api.iconify.design/tabler/stack-2.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 安装</h2>
-
-需要 Node 22+（构建用）。运行时只需 Chrome / Edge（MV3）。
+使用仓库清单指定的运行时版本构建，并在仓库根目录运行示例。
 
 ```bash
 git clone https://github.com/SuperMarioYL/cleanserp.git
-cd cleanserp && npm install && npm run build
+cd cleanserp
+npm ci
+npm run build
 ```
 
-## 快速开始
+独立示例包含三条完整合成结果对象，并运行生产 classify 函数。
 
-<h2><img src="https://api.iconify.design/tabler/rocket.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 快速开始</h2>
-
-1. 打开 `chrome://extensions`，开启右上角「开发者模式」。
-2. 点「加载已解包的扩展程序」，选择仓库下的 `dist/` 目录。
-3. 打开 [baidu.com](https://www.baidu.com) 搜索「怎么治疗脱发」——死链结果即时消失，顶部出现「净搜已过滤 N 条」徽章。
-
-<details><summary>示例输出（终端构建）</summary>
-
-```
-$ npm run build
-> cleanserp@0.1.0 build
-> node scripts/build.mjs
-  dist/src/content/serp-filter.js       2.1kb
-  dist/src/background/service-worker.js 1.4kb
-  dist/src/popup/popup.js               1.1kb
-  dist/tests/serp-filter.test.js        3.0kb
-build: dist/ ready for load-unpacked
+```bash
+node examples/presentation-demo.mjs
 ```
 
-</details>
+## 实际运行示例
+
+<picture>
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="./assets/presentation/process-mobile-dark.svg">
+  <source media="(max-width: 600px)" srcset="./assets/presentation/process-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/presentation/process-dark.svg">
+  <img src="./assets/presentation/process-light.svg" width="960" alt="Process diagram">
+</picture>
+
+The documentation result is usable; the listicle and login-wall examples match explicit rules.
+
+```text
+{"title":"JavaScript reference","verdict":"usable"}
+{"title":"一文读懂 5 个技巧","verdict":"dead-end","reason":"baijiahao-ai-slop"}
+{"title":"Members article","verdict":"dead-end","reason":"paywall"}
+```
+
+完整命令与输出保存在 [docs/demo-results.json](./docs/demo-results.json). 输入和复现代码均随仓提供。
+
+![已有终端录制](./assets/demo.gif)
+
+保留已有录制供参考；上方文字示例给出当前可复现的操作。
 
 ## 用法
 
-<h2><img src="https://api.iconify.design/tabler/terminal-2.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 用法</h2>
+CLI 提供以下操作。示例之外的命令需要替换成你的文件路径或标识。
 
-- **净化百度搜索**：安装后访问 `baidu.com/s?wd=...`，content script 自动跑一次分类并隐藏死链，MutationObserver 兜底处理翻页与异步重渲染。
-- **查看本次过滤数**：点工具栏净搜图标，popup 显示当前页签的「已过滤 N 条」。
-- **重新加载规则**：改 `src/content/rules.ts` → `npm run build` → 在 `chrome://extensions` 点扩展的「重新加载」。
-
-v0.1 的 on/off 开关与搜狗支持属于 v0.2 范围（见 [路线图](#路线图)）。
-
-## Demo
-
-<h2><img src="https://api.iconify.design/tabler/photo.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> Demo</h2>
-
-百度搜索「怎么治疗脱发」，5 条营销号 / 百家号 AI 文 / 付费墙死链即时消失，剩一条干净可读结果，顶部显示「净搜已过滤 5 条」徽章。
-
-![净搜 demo](assets/demo.gif)
-
-> 录制脚本见 [`docs/demo.tape`](./docs/demo.tape)（vhs），`.github/workflows/demo.yml` 可手动重渲染 `assets/demo.gif`。
+```bash
+npm run build
+# Load dist/ in chrome://extensions (Developer mode).
+npm run typecheck
+npm test
+```
 
 ## 配置
 
-<h2><img src="https://api.iconify.design/tabler/adjustments.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 配置</h2>
+修改 src/content/rules.ts 调整本地匹配规则，重新构建后重载已解包扩展。无需账号；扩展申请 storage 与百度站点访问权限。
 
-净搜无设置页，全部状态存于 `chrome.storage.local`（零配置是核心论点）：
+## 集成与职责分工
 
-| key | type | default | meaning |
-| --- | --- | --- | --- |
-| `cleanserp_enabled` | boolean | `true` | 全局开关。v0.1 默认开启；on/off 开关 UI 属于 v0.2 |
-| `cleanserp_count_<tabId>` | number | `0` | 该页签本次过滤计数 |
-| `cleanserp_engine_<tabId>` | `"baidu"` \| `"sogou"` | `"baidu"` | 该页 tab 命中的搜索引擎（v0.2 起含搜狗） |
+<picture>
+  <source media="(max-width: 600px) and (prefers-color-scheme: dark)" srcset="./assets/presentation/integrations-mobile-dark.svg">
+  <source media="(max-width: 600px)" srcset="./assets/presentation/integrations-mobile-light.svg">
+  <source media="(prefers-color-scheme: dark)" srcset="./assets/presentation/integrations-dark.svg">
+  <img src="./assets/presentation/integrations-light.svg" width="960" alt="Integrations diagram">
+</picture>
 
-## Pro 付费层
+以下路径已有源码实现。按任务选择输入，并把生成的结果与项目一起保存。
 
-净搜 v0.1 完全免费且开源，个人净化功能永久免费。商业化是一个未来的 Pro 层，面向电商运营 / 内容团队（3–10 人）：
+| 路径 | 已实现职责 |
+| --- | --- |
+| Baidu pages | Manifest content-script matches |
+| Result fields | URL, title, snippet and source |
+| Chrome storage | Per-tab filtering state |
+| MV3 bundle | Load unpacked from dist/ |
 
-- **Pro 能力**：自定义可编辑规则列表（按域名 / 标题模式永久过滤特定竞品营销号）+ 团队规则共享 + 云端同步（换电脑 / 多人）。
-- **定价**：¥39 / 用户 / 月，或 ¥199 / 团队 / 月（≤5 人）——低于电商工具的心理门槛，高于个人愿为「隐藏百度广告」付的钱（个人应免费）。
-- **最小付费路径**：电商团队 lead 用免费版搜竞品品牌词 → 想把某个营销号域名永久加入过滤 → 命中「Pro: 添加自定义规则」gate → 微信支付 ¥39/月 → 规则云端保存 + 邀请队友。
-- **计费栈**：微信支付（或 Lemon Squeezy CN-friendly fallback）+ 自托管规则同步 API（Node 22 + Postgres，与扩展同栈）。
+## 限制与后续方向
 
-v0.1 不实现 Pro；规则引擎已保持可插拔以便后续接入。
+- 规则属于启发式判断。baijiahao-ai-slop 等标签是规则分类，不证明作者使用 AI，也不证明页面无法访问。
+- 随仓 manifest 面向百度；本示例不代表已支持搜狗或已在扩展商店上架。
+- 离线示例在合成输入上运行生产分类器，不验证实时页面兼容性或搜索质量。
 
-## 路线图
-
-<h2><img src="https://api.iconify.design/tabler/map-2.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 路线图</h2>
-
-- [x] **m1** 百度 SERP 死链分类器（百家号 AI 文 / 营销号 / 付费墙 / 跳转中间页）+「已过滤 N 条」徽章
-- [ ] **m2** popup on/off 开关 + 本次过滤计数 + 搜狗 SERP 基础支持（复用 serp-dom 适配器）
-- [ ] **m3** Chrome/Edge Web Store MV3 打包（manifest、图标、截图、listing）+ 30s GIF demo + 双语 README
-- [ ] **Pro** 自定义可编辑规则列表 + 团队规则共享 + 云端同步
-- [ ] 「查看被隐藏内容」逐条展开器（v0.2+）
+后续可增加被隐藏卡片的查看入口，以及独立验证的搜索引擎适配器。共享自定义规则仍是后续工作。
 
 ## 许可与贡献
 
-<h2><img src="https://api.iconify.design/tabler/license.svg?color=%230071E3&width=24" height="22" align="absmiddle" alt=""> 许可与贡献</h2>
-
-MIT 许可证，详见 [LICENSE](./LICENSE)。欢迎在 [GitHub Issues](https://github.com/SuperMarioYL/cleanserp/issues) 反馈「哪些查询净化效果不好」或提交规则补丁 PR——百度 SERP DOM 变更后，改 `src/content/rules.ts` 即可。
-
-<p align="center"><sub><a href="./LICENSE">MIT</a> © 2026 SuperMarioYL</sub></p>
+许可见 [LICENSE](./LICENSE). 反馈问题时请提供最小输入、执行命令和实际输出。

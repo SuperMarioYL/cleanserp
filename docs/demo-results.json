@@ -1,0 +1,13 @@
+{
+  "schema": 1,
+  "source_revision": "a1f27705f49ae7ef3ee83e70764b0b8699432595",
+  "scope": "Three explicit synthetic search results run through the production rule classifier; this does not measure live search quality or browser DOM behavior.",
+  "steps": [
+    {
+      "label": "Recorded run",
+      "body": "Three explicit synthetic search results run through the production rule classifier; this does not measure live search quality or browser DOM behavior.",
+      "command": "node examples/presentation-demo.mjs",
+      "output": "{\"title\":\"JavaScript reference\",\"verdict\":\"usable\"}\n{\"title\":\"一文读懂 5 个技巧\",\"verdict\":\"dead-end\",\"reason\":\"baijiahao-ai-slop\"}\n{\"title\":\"Members article\",\"verdict\":\"dead-end\",\"reason\":\"paywall\"}"
+    }
+  ]
+}
