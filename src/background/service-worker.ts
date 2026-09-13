@@ -1,13 +1,12 @@
 // service-worker.ts — MV3 background service worker
 //
-// m1 职责（已实现）：
+// 职责：
 //   - 安装时写默认开关（cleanserp_enabled = true）
-//   - 接收 content script 上报的过滤计数，按 tab 存 chrome.storage.local
+//   - 接收 content script 上报的过滤计数（含真实引擎），按 tab 存 chrome.storage.local
 //   - 把计数显示到工具栏徽标文字（chrome.action.setBadgeText）
 //   - 响应 popup 的 GET_STATE 查询
-//
-// m2 职责（存根，未实现）：on/off 开关翻转 + 搜狗 SERP 计数。
-//   TOGGLE 处理器返回 { ok:false, reason:"v0.2" }，popup 据此显示路线图提示。
+//   - 响应 popup 的 TOGGLE 翻转（v0.2 起实现）：翻转持久化开关并回传新状态；
+//     content script 通过 chrome.storage.onChanged 即时还原/重跑过滤。
 
 type CountMessage = {
   type: "CLEANSERP_REPORT_COUNT";
@@ -63,9 +62,15 @@ chrome.runtime.onMessage.addListener((msg: Inbound, _sender, sendResponse) => {
       return true; // 异步 sendResponse
     }
     case "CLEANSERP_TOGGLE": {
-      // m2 存根：on/off 开关翻转属于 m2 范围，v0.1 不实现。
-      sendResponse?.({ ok: false, reason: "v0.2" });
-      break;
+      // 翻转持久化开关。content script 监听 storage.onChanged 即时生效，
+      // 无需刷新页面；popup 拿 { ok, enabled } 做乐观渲染。
+      chrome.storage.local.get(["cleanserp_enabled"], (res) => {
+        const enabled = res?.cleanserp_enabled !== false;
+        chrome.storage.local.set({ cleanserp_enabled: !enabled }, () => {
+          sendResponse?.({ ok: true, enabled: !enabled });
+        });
+      });
+      return true; // 异步 sendResponse
     }
   }
 });

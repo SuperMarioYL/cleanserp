@@ -1,6 +1,7 @@
 // popup.ts — 扩展弹窗逻辑
 //
-// m1：查询当前页签的过滤计数并渲染；on/off 开关属于 m2（按钮 disabled）。
+// 查询当前页签的过滤计数并渲染；on/off 开关（v0.2 起可用）翻转持久化
+// 状态，content script 监听 storage 变更即时还原/重跑过滤。
 // 全程零配置：无账号、无设置页，开关之外不引入任何配置 UI。
 
 interface StateResponse {
@@ -9,16 +10,27 @@ interface StateResponse {
   engine: "baidu" | "sogou";
 }
 
+interface ToggleResponse {
+  ok: boolean;
+  enabled: boolean;
+}
+
+let lastState: StateResponse | undefined;
+
 function setText(id: string, text: string): void {
   const el = document.getElementById(id);
   if (el) el.textContent = text;
 }
 
 function renderState(state: StateResponse): void {
+  lastState = state;
   setText("count-num", String(state.count));
   setText("status-text", state.enabled ? "已开启 · 净搜运行中" : "已关闭");
+  setText("toggle-label", state.enabled ? "净化开关 · 开" : "净化开关 · 关");
   const dot = document.getElementById("status-dot");
   if (dot) dot.dataset.on = state.enabled ? "1" : "0";
+  const toggle = document.getElementById("toggle");
+  if (toggle) toggle.setAttribute("aria-pressed", state.enabled ? "true" : "false");
 }
 
 async function load(): Promise<void> {
@@ -43,9 +55,11 @@ function send<T = unknown>(message: unknown): Promise<T | undefined> {
   });
 }
 
-document.getElementById("toggle")?.addEventListener("click", () => {
-  // m2 存根：开关翻转属于 m2，v0.1 不实现。
-  setText("status-text", "开关将于 v0.2 上线");
+document.getElementById("toggle")?.addEventListener("click", async () => {
+  // 乐观更新：TOGGLE 往返期间先按目标态渲染；响应到达后以 worker 回传的真值纠正。
+  if (lastState) renderState({ ...lastState, enabled: !lastState.enabled });
+  const resp = await send<ToggleResponse>({ type: "CLEANSERP_TOGGLE" });
+  if (resp?.ok && lastState) renderState({ ...lastState, enabled: resp.enabled });
 });
 
 document.getElementById("roadmap-link")?.addEventListener("click", (e) => {

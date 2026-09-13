@@ -11,7 +11,7 @@
 
 **Filter search results before opening every link.**
 
-CleanSERP applies local heuristics to rendered Baidu search results and hides matching cards while showing a filtered-result count.
+CleanSERP applies local heuristics to rendered Baidu/Sogou search results and hides matching cards while showing a filtered-result count.
 
 ## Why use it
 
@@ -19,7 +19,7 @@ Search snippets already contain signals such as promotion labels, login prompts 
 
 - **Local classification** — Visible result fields are classified without an API call.
 - **Explainable reasons** — Matching results carry a specific rule category.
-- **Keep your search page** — A content script works in the existing Baidu result view.
+- **Keep your search page** — A content script works in the existing Baidu/Sogou result view.
 
 ## Architecture
 
@@ -30,11 +30,11 @@ Search snippets already contain signals such as promotion labels, login prompts 
   <img src="./assets/presentation/architecture-light.svg" width="960" alt="Architecture diagram">
 </picture>
 
-The content script extracts result fields and calls the pure classify function. Matching cards are hidden and the count is published to the extension UI. The manifest currently injects scripts into Baidu pages; the type definition alone does not enable another engine.
+The content script picks the parser per engine (Baidu/Sogou), extracts result fields and calls the pure classify function. Matching cards are hidden and the count plus engine are published to the extension UI. The popup on/off toggle takes effect on already-filtered pages without a reload; a bottom strip lists hidden results one by one with a per-item restore.
 
 | Component | Responsibility |
 | --- | --- |
-| `Baidu DOM` | src/lib/serp-dom.ts |
+| `Baidu/Sogou DOM` | src/lib/serp-dom.ts |
 | `Rule classifier` | src/content/rules.ts |
 | `Content script` | src/content/serp-filter.ts |
 | `Popup state` | service worker + popup |
@@ -92,7 +92,7 @@ npm test
 
 ## Configuration
 
-Edit src/content/rules.ts to change local matching rules, rebuild, then reload the unpacked extension. No account is required. The extension requests storage permission and Baidu host permissions.
+Edit src/content/rules.ts to change local matching rules, rebuild, then reload the unpacked extension. No account is required. The extension requests storage permission and Baidu/Sogou host permissions.
 
 ## Integrations and responsibilities
 
@@ -107,7 +107,7 @@ The following routes are implemented in the source. Choose the input that matche
 
 | Route | Implemented role |
 | --- | --- |
-| Baidu pages | Manifest content-script matches |
+| Baidu/Sogou pages | Manifest content-script matches |
 | Result fields | URL, title, snippet and source |
 | Chrome storage | Per-tab filtering state |
 | MV3 bundle | Load unpacked from dist/ |
@@ -115,10 +115,12 @@ The following routes are implemented in the source. Choose the input that matche
 ## Limits and next steps
 
 - Rules are heuristics. Labels such as baijiahao-ai-slop name a rule category; they do not prove that an author used AI or that a page is inaccessible.
-- The shipped manifest targets Baidu. Sogou and store publication are not established by this demo.
+- Desktop Baidu (www.baidu.com) and Sogou (www.sogou.com/web) organic results are supported: both parser adapters are regression-tested against in-repo fixtures, but both SERP DOMs churn through A/B changes and live-page compatibility is not guaranteed.
+- Mobile SERP DOMs (m.baidu.com / m.sogou.com) differ from desktop; the current selectors are desktop-only. On mobile the injected script is a harmless no-op (0 parsed cards implies no filtering and no badge) until real-device verification is available.
+- Sogou vertical searches (images/videos/WeChat tabs) are out of scope.
 - The offline example tests the production classifier on synthetic inputs, not live DOM compatibility or search quality.
 
-Useful next steps are exposing hidden cards for inspection and adding separately tested search-engine adapters. Custom shared rules are future work.
+Exposing hidden cards for inspection and separately tested search-engine adapters shipped in v0.2.0 (a bottom strip with per-item restore; Baidu/Sogou adapters both have fixture regression tests). Mobile adapters and shared custom rules remain future work.
 
 ## License and contributions
 

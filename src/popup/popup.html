@@ -28,14 +28,14 @@
         <span id="status-text">读取中…</span>
       </section>
 
-      <!-- m2 存根：on/off 开关属于 m2 范围，v0.1 显示路线图提示而非可用开关 -->
-      <button class="toggle" id="toggle" type="button" disabled>
+      <!-- on/off 开关（v0.2 起可用）：翻转后已过滤页面即时生效，无需刷新 -->
+      <button class="toggle" id="toggle" type="button" aria-pressed="true">
         <span class="track"><span class="thumb"></span></span>
-        <span class="toggle-label">开关 · v0.2 上线</span>
+        <span class="toggle-label" id="toggle-label">净化开关</span>
       </button>
 
       <p class="muted">
-        百度 SERP 净化已开启。搜狗支持与开关将于 v0.2 上线，详见
+        百度/搜狗 SERP 净化运行中。关闭开关后，当前页面已隐藏的结果立即恢复，详见
         <a href="https://github.com/SuperMarioYL/cleanserp#路线图" id="roadmap-link">路线图</a>。
       </p>
 

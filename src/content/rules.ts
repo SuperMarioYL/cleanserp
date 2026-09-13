@@ -61,22 +61,24 @@ const AI_LISTICLE_PATTERNS: RegExp[] = [
 // ── 营销号域名（保守列表，仅作信号；source 标签优先） ───────────────
 // 这里只放公认的、以营销号内容农场为主要产出的小站，避免误杀主站。
 // 大平台（搜狐/新浪/百家号）不整站封，只按 source/特征规则处理。
-const YINGXIAOHAO_DOMAINS = new Set<string>([
-  "www.yixieshi.com",
+//
+// 不变式：所有域名集合一律存 hostnameOf() 输出的规范形式（小写、无 www.
+// 前缀）——classify() 只按规范 host 查集合，写带 www. 的键等于死规则
+//（v0.1 的 chinaz.com / niaogebiji.com 即此缺陷），全量覆盖测试钉死它。
+export const YINGXIAOHAO_DOMAINS = new Set<string>([
   "yixieshi.com",
-  "www.chinaz.com",
+  "chinaz.com",
   "sanv.cn",
-  "www.niaogebiji.com",
+  "niaogebiji.com",
 ]);
 
 const YINGXIAOHAO_SOURCE_HINTS = ["营销号", "广告", "推广"];
 
 // ── 付费墙 ───────────────────────────────────────────────────────────
 // 以可见 cite 域名 + snippet 登录墙特征双信号判定，避免误杀。
-const PAYWALL_DOMAINS = new Set<string>([
+export const PAYWALL_DOMAINS = new Set<string>([
   "36kr.com",
   "jianshu.com",
-  "www.jianshu.com",
 ]);
 
 const PAYWALL_SNIPPET_HINTS = [
