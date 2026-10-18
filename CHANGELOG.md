@@ -1,5 +1,16 @@
 # 更新日志 (Changelog)
 
+## [0.3.0] - 2026-10-19
+
+### 修复
+
+- **搜狗页面观察器自触发死循环**：`serp-filter.ts` 的 MutationObserver 在无 `#content_left` 的页面（搜狗）以 `document.body` 为观察根，而 `executePlan` 每轮对徽章/折叠条「删旧建新」——扩展自身的 UI 重建被观察器当作页面重渲染，只要过滤数 >0 就以约 400ms 一次的频率永久重解析、重分类、重上报。观察器回调现在先经自注入 UI 判定（新增导出 `isOwnUiNode` / `hasForeignMutation`）过滤，仅页面真实变更才重跑；新增回归测试以真实 MutationObserver 记录钉死「一轮 executePlan 的全部变更均为自身 UI」。
+- **开关生命周期状态一致性**：关闭开关后 content script 现在回报计数 0——此前工具栏徽标与 popup 计数残留旧值，与「已关闭」并排显示；popup 开关新增在途守卫，TOGGLE 往返期间忽略连点（worker 端 read-modify-write 非原子，并发翻转可能互相吞掉）；初始化存储快照与 `storage.onChanged` 竞争时以后到真值为准，过期快照不再回写。
+
+### 维护
+
+- 版本 lockstep 升至 0.3.0（`VERSION` / `package.json` / `manifest.json`）；产品站点文案与已发布能力对齐——移除「manifest 仅面向百度、未支持搜狗」的过时限制声明（搜狗注入与 host_permissions 已随上个版本发布）。
+
 ## [0.2.0] - 2026-09-13
 
 ### 新增
@@ -21,5 +32,6 @@
 
 首个发布：百度 SERP 死链分类器（百家号AI文 / 营销号 / 付费墙 / 跳转中间页）+「已过滤 N 条」徽章 + popup 过滤计数 + MV3 打包（load-unpacked）+ 双语 README + 产品站点。
 
+[0.3.0]: https://github.com/SuperMarioYL/cleanserp/releases/tag/v0.3.0
 [0.2.0]: https://github.com/SuperMarioYL/cleanserp/releases/tag/v0.2.0
 [0.1.0]: https://github.com/SuperMarioYL/cleanserp/releases/tag/v0.1.0

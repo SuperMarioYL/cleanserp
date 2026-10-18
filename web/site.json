@@ -19,8 +19,8 @@
       "zh": "点开链接之前，先筛掉命中规则的结果。"
     },
     "sub": {
-      "en": "CleanSERP applies local heuristics to rendered Baidu search results and hides matching cards while showing a filtered-result count.",
-      "zh": "净搜对已渲染的百度搜索结果应用本地启发式规则，隐藏命中的卡片，并显示过滤数量。"
+      "en": "CleanSERP applies local heuristics to rendered Baidu/Sogou search results and hides matching cards while showing a filtered-result count.",
+      "zh": "净搜对已渲染的百度/搜狗搜索结果应用本地启发式规则，隐藏命中的卡片，并显示过滤数量。"
     },
     "href": "#quickstart"
   },
@@ -51,8 +51,8 @@
         "zh": "沿用搜索页面"
       },
       "body": {
-        "en": "A content script works in the existing Baidu result view.",
-        "zh": "content script 直接作用于已有百度结果页。"
+        "en": "A content script works in the existing Baidu/Sogou result view.",
+        "zh": "content script 直接作用于已有百度/搜狗结果页。"
       }
     }
   ],
@@ -109,8 +109,8 @@
       "zh": "规则属于启发式判断。baijiahao-ai-slop 等标签是规则分类，不证明作者使用 AI，也不证明页面无法访问。"
     },
     {
-      "en": "The shipped manifest targets Baidu. Sogou and store publication are not established by this demo.",
-      "zh": "随仓 manifest 面向百度；本示例不代表已支持搜狗或已在扩展商店上架。"
+      "en": "The manifest injects the content script into both www.baidu.com and www.sogou.com (desktop organic results). Store publication is not established by this demo.",
+      "zh": "随仓 manifest 同时向百度与搜狗桌面版自然结果页注入脚本；本示例不代表已在扩展商店上架。"
     },
     {
       "en": "The offline example tests the production classifier on synthetic inputs, not live DOM compatibility or search quality.",
@@ -140,8 +140,8 @@
           "zh": "处理过程"
         },
         "body": {
-          "en": "The content script extracts result fields and calls the pure classify function. Matching cards are hidden and the count is published to the extension UI. The manifest currently injects scripts into Baidu pages; the type definition alone does not enable another engine.",
-          "zh": "content script 提取结果字段并调用纯函数 classify，隐藏命中卡片，再把计数传给扩展界面。当前 manifest 只向百度页面注入脚本；类型定义出现其他引擎并不等于已支持。"
+          "en": "The content script extracts result fields and calls the pure classify function. Matching cards are hidden and the count is published to the extension UI. The manifest injects the script into www.baidu.com and www.sogou.com pages; engine detection picks the matching parser at runtime.",
+          "zh": "content script 提取结果字段并调用纯函数 classify，隐藏命中卡片，再把计数传给扩展界面。manifest 向百度与搜狗桌面版结果页注入脚本；运行时按引擎自动选择解析器。"
         },
         "image": {
           "light": "/assets/presentation/process-light.svg",
@@ -162,8 +162,8 @@
           "zh": "CleanSERP 的工作方式"
         },
         "body": {
-          "en": "The content script extracts result fields and calls the pure classify function. Matching cards are hidden and the count is published to the extension UI. The manifest currently injects scripts into Baidu pages; the type definition alone does not enable another engine.",
-          "zh": "content script 提取结果字段并调用纯函数 classify，隐藏命中卡片，再把计数传给扩展界面。当前 manifest 只向百度页面注入脚本；类型定义出现其他引擎并不等于已支持。"
+          "en": "The content script extracts result fields and calls the pure classify function. Matching cards are hidden and the count is published to the extension UI. The manifest injects the script into www.baidu.com and www.sogou.com pages; engine detection picks the matching parser at runtime.",
+          "zh": "content script 提取结果字段并调用纯函数 classify，隐藏命中卡片，再把计数传给扩展界面。manifest 向百度与搜狗桌面版结果页注入脚本；运行时按引擎自动选择解析器。"
         },
         "image": {
           "light": "/assets/presentation/architecture-light.svg",
@@ -208,8 +208,8 @@
           "zh": "配置"
         },
         "body": {
-          "en": "Edit src/content/rules.ts to change local matching rules, rebuild, then reload the unpacked extension. No account is required. The extension requests storage permission and Baidu host permissions.",
-          "zh": "修改 src/content/rules.ts 调整本地匹配规则，重新构建后重载已解包扩展。无需账号；扩展申请 storage 与百度站点访问权限。"
+          "en": "Edit src/content/rules.ts to change local matching rules, rebuild, then reload the unpacked extension. No account is required. The extension requests storage permission and Baidu/Sogou host permissions.",
+          "zh": "修改 src/content/rules.ts 调整本地匹配规则，重新构建后重载已解包扩展。无需账号；扩展申请 storage 与百度/搜狗站点访问权限。"
         }
       },
       {

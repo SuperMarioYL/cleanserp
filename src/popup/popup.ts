@@ -55,11 +55,22 @@ function send<T = unknown>(message: unknown): Promise<T | undefined> {
   });
 }
 
+// 在途守卫：TOGGLE 在 worker 端是非原子 read-modify-write，连点的并发
+// 翻转会互相吞掉（两次点击只生效一次，且乐观渲染与最终态可能相反）。
+// 往返期间忽略后续点击。
+let toggleInFlight = false;
+
 document.getElementById("toggle")?.addEventListener("click", async () => {
-  // 乐观更新：TOGGLE 往返期间先按目标态渲染；响应到达后以 worker 回传的真值纠正。
-  if (lastState) renderState({ ...lastState, enabled: !lastState.enabled });
-  const resp = await send<ToggleResponse>({ type: "CLEANSERP_TOGGLE" });
-  if (resp?.ok && lastState) renderState({ ...lastState, enabled: resp.enabled });
+  if (toggleInFlight) return;
+  toggleInFlight = true;
+  try {
+    // 乐观更新：TOGGLE 往返期间先按目标态渲染；响应到达后以 worker 回传的真值纠正。
+    if (lastState) renderState({ ...lastState, enabled: !lastState.enabled });
+    const resp = await send<ToggleResponse>({ type: "CLEANSERP_TOGGLE" });
+    if (resp?.ok && lastState) renderState({ ...lastState, enabled: resp.enabled });
+  } finally {
+    toggleInFlight = false;
+  }
 });
 
 document.getElementById("roadmap-link")?.addEventListener("click", (e) => {

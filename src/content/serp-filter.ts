@@ -276,6 +276,51 @@ export function restoreHidden(): void {
   }
 }
 
+// ── 自注入 UI 判定（MutationObserver 兜底重跑的去重过滤） ─────────────
+// executePlan 每轮对徽章/折叠条「删旧建新」，这些 childList 变更发生在
+// document.body 上。观察根在无 #content_left 的页面（搜狗）即 body 本身，
+// 若不滤掉自身变更，会形成 400ms 一次的「重过滤 → 重建 UI → 再触发」
+// 死循环。此处收敛「哪些节点属于本扩展自注入 UI」的唯一定义。
+
+/** 是否为本扩展自注入的 UI 节点（徽章 / 折叠条 / 隐藏列表 / 隐藏行）。 */
+export function isOwnUiNode(node: Node): boolean {
+  // 不用 instanceof Element：node 测试环境没有 DOM 全局（happy-dom 只换入
+  // document），按 id/classList 鸭子判定；文本/注释节点无 id，归为外部。
+  const el = node as Partial<Element> | null;
+  if (!el || typeof el.id !== "string") return false;
+  return (
+    el.id === BADGE_ID ||
+    el.id === HIDDEN_STRIP_ID ||
+    el.id === HIDDEN_LIST_ID ||
+    (typeof el.classList?.contains === "function" &&
+      el.classList.contains(HIDDEN_ITEM_CLASS))
+  );
+}
+
+export interface MutationLike {
+  addedNodes: ArrayLike<Node>;
+  removedNodes: ArrayLike<Node>;
+}
+
+/** 一轮变更里是否存在非自注入 UI 的节点增删（true ⇒ 页面真的变了，需重过滤）。 */
+export function hasForeignMutation(records: Iterable<MutationLike>): boolean {
+  for (const rec of records) {
+    if (hasForeignNode(rec.addedNodes) || hasForeignNode(rec.removedNodes)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function hasForeignNode(nodes: ArrayLike<Node>): boolean {
+  // 用索引遍历而非 for..of：仓库 tsconfig 未启用 DOM.Iterable，NodeList
+  // 的类型不带 [Symbol.iterator]（运行时可迭代）。
+  for (let i = 0; i < nodes.length; i++) {
+    if (!isOwnUiNode(nodes[i])) return true;
+  }
+  return false;
+}
+
 /** 便利组合：plan + execute + 上报。返回报告供调用方（content script）使用。 */
 export function runFilter(results: SerpResult[]): FilterReport {
   const plan = planFilter(results);
@@ -330,6 +375,9 @@ if (IN_EXTENSION) {
   let enabled = true;
   let observerInstalled = false;
   let timer: number | undefined;
+  // 真值写入 latch：初读与 onChanged 谁先到谁为准。若 storage 在初读与
+  // promise 决议之间被翻转，后到的过期快照不得回写覆盖较新的真值。
+  let stateSettled = false;
 
   // 搜索页翻页/异步加载会重绘结果——MutationObserver 兜底重跑（去抖）。
   // 只在确认开启后安装：加载时即关闭的用户保持 v0.1 的零副作用语义，
@@ -337,7 +385,9 @@ if (IN_EXTENSION) {
   const installObserver = (): void => {
     if (observerInstalled) return;
     observerInstalled = true;
-    const observer = new MutationObserver(() => {
+    const observer = new MutationObserver((records) => {
+      // 自身 UI 的删旧建新不算页面变更（root=body 的页面据此死循环）。
+      if (!hasForeignMutation(records)) return;
       if (timer) window.clearTimeout(timer);
       timer = window.setTimeout(() => {
         if (enabled) purgeAndFilter();
@@ -348,6 +398,8 @@ if (IN_EXTENSION) {
   };
 
   void isEnabled().then((on) => {
+    if (stateSettled) return; // onChanged 已带来更新的真值
+    stateSettled = true;
     enabled = on;
     if (on) {
       purgeAndFilter();
@@ -358,12 +410,16 @@ if (IN_EXTENSION) {
   // 开关翻转即时生效（v0.2）：关 = 全量还原已隐藏卡片 + 撤 UI；开 = 重跑过滤。
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area !== "local" || !("cleanserp_enabled" in changes)) return;
+    stateSettled = true;
     enabled = changes.cleanserp_enabled?.newValue !== false;
     if (enabled) {
       purgeAndFilter();
       installObserver();
     } else {
       restoreHidden();
+      // 关闭后过滤态归零：清工具栏徽标 + popup 计数。否则卡片已还原，
+      // 徽标仍显示旧值，popup 会出现「已关闭」与「已过滤 N 条」并排。
+      reportCount(0, detectEngine(location.hostname));
     }
   });
 }

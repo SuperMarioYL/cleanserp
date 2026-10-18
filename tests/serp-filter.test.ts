@@ -13,6 +13,8 @@ import {
   planFilter,
   executePlan,
   restoreHidden,
+  isOwnUiNode,
+  hasForeignMutation,
 } from "../src/content/serp-filter";
 import {
   hostnameOf,
@@ -237,4 +239,94 @@ test("count=0 的计划：不注入任何 UI，restoreHidden 仍安全（幂等�
 
   restoreHidden();
   assert.equal(nodes[0].style.display, "");
+});
+
+// ── v0.3.0 fix-1: 观察器自触发死循环的回归钉死 ─────────────────────────
+// v0.2 的 MutationObserver 以 document.body 兜底观察（搜狗无 #content_left），
+// 而 executePlan 每轮删旧建新徽章/折叠条——自身 UI 变更被当作页面重渲染，
+// 只要过滤数 >0 就形成 400ms 一次的永久重过滤循环。修复 = 观察器回调先经
+// isOwnUiNode/hasForeignMutation 过滤；以下测试钉死「一轮 executePlan 产生的
+// 全部 childList 变更均为自身 UI」这一不变式。
+
+test("isOwnUiNode：自注入 UI 判真，外部节点与文本节点判假", () => {
+  installDom(0);
+  const badge = document.createElement("div");
+  badge.id = "cleanserp-filter-badge";
+  const strip = document.createElement("div");
+  strip.id = "cleanserp-hidden-strip";
+  const list = document.createElement("div");
+  list.id = "cleanserp-hidden-list";
+  const row = document.createElement("div");
+  row.className = "cleanserp-hidden-item";
+  const card = document.createElement("div");
+  const text = document.createTextNode("page text");
+
+  assert.equal(isOwnUiNode(badge), true);
+  assert.equal(isOwnUiNode(strip), true);
+  assert.equal(isOwnUiNode(list), true);
+  assert.equal(isOwnUiNode(row), true);
+  assert.equal(isOwnUiNode(card), false);
+  assert.equal(isOwnUiNode(text), false);
+});
+
+test("hasForeignMutation：纯自身 UI 增删 → false；混入任一外部节点 → true", () => {
+  installDom(0);
+  const badge = document.createElement("div");
+  badge.id = "cleanserp-filter-badge";
+  const card = document.createElement("div");
+  const text = document.createTextNode("page text");
+
+  assert.equal(
+    hasForeignMutation([{ addedNodes: [badge], removedNodes: [badge] }]),
+    false,
+  );
+  assert.equal(
+    hasForeignMutation([{ addedNodes: [badge, card], removedNodes: [] }]),
+    true,
+  );
+  assert.equal(
+    hasForeignMutation([{ addedNodes: [], removedNodes: [text] }]),
+    true,
+  );
+});
+
+test("executePlan 一轮的真实 childList 变更全部为自身 UI——观察器不得据此重过滤", async () => {
+  const window = new Window();
+  const doc = window.document as unknown as Document;
+  doc.body.innerHTML = "";
+  const nodes: HTMLElement[] = [];
+  for (let i = 0; i < 2; i++) {
+    const card = doc.createElement("div");
+    card.textContent = `card-${i}`;
+    doc.body.append(card);
+    nodes.push(card);
+  }
+  (globalThis as Record<string, unknown>).document = doc;
+
+  // happy-dom 的 MutationObserver 必须从 Window 实例取（独立导出的类要求
+  // Window 上下文）；记录 body 的真实 childList 变更。
+  const records: { addedNodes: Node[]; removedNodes: Node[] }[] = [];
+  const OwnObserver = (window as unknown as { MutationObserver: typeof MutationObserver })
+    .MutationObserver;
+  const observer = new OwnObserver((recs) => {
+    for (const r of recs) {
+      records.push({ addedNodes: Array.from(r.addedNodes), removedNodes: Array.from(r.removedNodes) });
+    }
+  });
+  observer.observe(doc.body, { childList: true, subtree: true });
+
+  const plan = planFilter(domResults(nodes, ["https://www.yixieshi.com/a", "https://36kr.com/a"]));
+  executePlan(plan);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  observer.disconnect();
+
+  // 徽章 + 折叠条确实进了 DOM（变更是真实发生的）
+  assert.ok(document.getElementById("cleanserp-filter-badge"));
+  assert.ok(document.getElementById("cleanserp-hidden-strip"));
+  assert.ok(records.length > 0, "executePlan 应产生可观察的 childList 变更");
+  assert.equal(
+    hasForeignMutation(records),
+    false,
+    "一轮 executePlan 的全部变更应为自身 UI——否则 root=body 页面死循环",
+  );
 });

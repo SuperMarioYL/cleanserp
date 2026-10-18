@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "净搜 CleanSERP",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "零配置百度/搜狗搜索净化扩展，隐藏营销号、百家号AI文与付费墙死链。",
   "icons": { "128": "icons/icon-128.png" },
   "action": {

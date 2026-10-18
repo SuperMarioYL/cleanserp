@@ -1,6 +1,6 @@
 {
   "name": "cleanserp",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "净搜 CleanSERP — 零配置百度/搜狗 SERP 净化扩展（隐藏营销号、百家号AI文与付费墙死链）",
   "private": true,
   "type": "module",

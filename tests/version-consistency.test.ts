@@ -1,11 +1,12 @@
-// version-consistency.test.ts — 版本 lockstep（m8）
+// version-consistency.test.ts — 版本 lockstep（m8，随每个发布递增维护）
 //
-// 断言所有在役版本表面一致为 0.2.0：VERSION / package.json / manifest.json
-// （Chrome 扩展页用户真正读到的那个）+ web/site.json content_version（数字
-// 修订号，类型保持 1→2）。冻结产物（docs/demo-results.json、docs/demo.tape、
-// assets/demo.gif 是 v0.1 时期的录制）停留录制版本，在杂散版本扫描中
-// allow-list；package-lock.json 是生成文件（传递依赖版本号可合法包含旧版本
-// 子串），同样 allow-list。测试经 npm 从仓库根目录运行（node --test dist/tests/）。
+// 断言所有在役版本表面一致为 EXPECTED_VERSION：VERSION / package.json /
+// manifest.json（Chrome 扩展页用户真正读到的那个）+ web/site.json
+// content_version（数字修订号；站点内容与修订号随「site: refresh」提交递增）。
+// 冻结产物（docs/demo-results.json、docs/demo.tape、assets/demo.gif 是早期
+// 时期的录制）停留录制版本，在杂散版本扫描中 allow-list；package-lock.json
+// 是生成文件（传递依赖版本号可合法包含旧版本子串），同样 allow-list。
+// 测试经 npm 从仓库根目录运行（node --test dist/tests/）。
 //
 // 旧版本号通过 join 拼出而非字面量书写——本文件自身也在杂散扫描范围内。
 
@@ -17,10 +18,10 @@ import { join, relative, extname } from "node:path";
 const root = process.cwd();
 const read = (p: string): string => readFileSync(join(root, p), "utf8");
 
-const EXPECTED_VERSION = "0.2.0";
-const OLD_VERSION = ["0", "1", "0"].join(".");
+const EXPECTED_VERSION = "0.3.0";
+const OLD_VERSION = ["0", "2", "0"].join(".");
 
-test("VERSION / package.json / manifest.json 三表面一致为 0.2.0", () => {
+test("VERSION / package.json / manifest.json 三表面一致为当前发布版本", () => {
   assert.equal(read("VERSION").trim(), EXPECTED_VERSION);
 
   const pkg = JSON.parse(read("package.json"));
@@ -35,10 +36,10 @@ test("web/site.json meta.content_version 为数字 2（类型保持的 1→2 修
   assert.equal(site.meta.content_version, 2);
 });
 
-test("CHANGELOG.md 同时含旧版本与 [0.2.0] 两个小节", () => {
+test("CHANGELOG.md 同时含上一版本与当前版本两个小节", () => {
   const changelog = read("CHANGELOG.md");
   assert.match(changelog, new RegExp(`\\[${OLD_VERSION}\\]`));
-  assert.match(changelog, /\[0\.2\.0\]/);
+  assert.match(changelog, new RegExp(`\\[${EXPECTED_VERSION.replace(/\./g, "\\.")}\\]`));
 });
 
 test("manifest 已接入搜狗：content_scripts matches 与 host_permissions 均含 sogou host", () => {
@@ -58,9 +59,10 @@ const SKIP_DIRS = new Set([".git", "node_modules", "dist"]);
 const BINARY_EXTS = new Set([".png", ".gif", ".ico", ".zip", ".woff", ".woff2"]);
 const ALLOWLIST = new Set([
   "CHANGELOG.md", // 历史节记录旧版本号
-  "docs/demo-results.json", // 冻结的 v0.1 时期录制产物
-  "docs/demo.tape", // 冻结的 v0.1 时期 vhs 录制
+  "docs/demo-results.json", // 冻结的早期录制产物
+  "docs/demo.tape", // 冻结的早期 vhs 录制
   "package-lock.json", // 生成文件，传递依赖版本可含旧版本子串
+  ".build_metadata.yaml", // gitignored 构建元数据缓存：published_version 合法保留最近已发布版本
 ]);
 
 function collectFiles(dir: string, acc: string[] = []): string[] {

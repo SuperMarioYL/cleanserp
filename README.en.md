@@ -120,7 +120,7 @@ The following routes are implemented in the source. Choose the input that matche
 - Sogou vertical searches (images/videos/WeChat tabs) are out of scope.
 - The offline example tests the production classifier on synthetic inputs, not live DOM compatibility or search quality.
 
-Exposing hidden cards for inspection and separately tested search-engine adapters shipped in v0.2.0 (a bottom strip with per-item restore; Baidu/Sogou adapters both have fixture regression tests). Mobile adapters and shared custom rules remain future work.
+Exposing hidden cards for inspection and separately tested search-engine adapters have shipped (a bottom strip with per-item restore; Baidu/Sogou adapters both have fixture regression tests). Mobile adapters and shared custom rules remain future work.
 
 ## License and contributions
 
