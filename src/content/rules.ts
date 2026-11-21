@@ -107,8 +107,11 @@ export function classify(r: SerpResult): Classification {
   const host = hostnameOf(r.url);
   const haystack = `${r.title} ${r.snippet}`;
 
-  // 1. 百家号 AI 文：百家号域名 + AI 列表文模板
-  if (host === "baijiahao.baidu.com" && matchesAny(haystack, AI_LISTICLE_PATTERNS)) {
+  // 1. 百家号 AI 文：百家号域名（或解析器兜底的可见「百家号」来源标签）+ AI 列表文模板
+  //    百度的来源标签常常只有「百家号」三个字而非完整域名——解析器把可见 cite
+  //    文本当 URL 兜底时，只认 host 会让这类卡片整类漏杀。
+  const isBaijiahao = host === "baijiahao.baidu.com" || r.source.includes("百家号");
+  if (isBaijiahao && matchesAny(haystack, AI_LISTICLE_PATTERNS)) {
     return { verdict: "dead-end", reason: "baijiahao-ai-slop" };
   }
 

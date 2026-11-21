@@ -300,11 +300,26 @@ export function isOwnUiNode(node: Node): boolean {
 export interface MutationLike {
   addedNodes: ArrayLike<Node>;
   removedNodes: ArrayLike<Node>;
+  /** 变更发生的目标节点（MutationRecord.target）。用于识别自身 UI 内部的文本更新。 */
+  target?: Node | null;
 }
 
-/** 一轮变更里是否存在非自注入 UI 的节点增删（true ⇒ 页面真的变了，需重过滤）。 */
+/** target 是否位于本扩展自注入 UI 子树内（含自身）。 */
+function isInsideOwnUi(node: Node | null | undefined): boolean {
+  let current = node;
+  while (current) {
+    if (isOwnUiNode(current)) return true;
+    current = current.parentNode;
+  }
+  return false;
+}
+
+/** 一轮变更里是否存在非自注入 UI 的页面变更（true ⇒ 页面真的变了，需重过滤）。 */
 export function hasForeignMutation(records: Iterable<MutationLike>): boolean {
   for (const rec of records) {
+    // 自注入 UI 内部的文本更新（如单条恢复时折叠条计数的 textContent 赋值）
+    // 目标在自身 UI 子树内，不算页面变更——否则恢复动作会触发自己的回滚。
+    if (isInsideOwnUi(rec.target)) continue;
     if (hasForeignNode(rec.addedNodes) || hasForeignNode(rec.removedNodes)) {
       return true;
     }

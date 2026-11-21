@@ -118,6 +118,8 @@ The following routes are implemented in the source. Choose the input that matche
 - Desktop Baidu (www.baidu.com) and Sogou (www.sogou.com/web) organic results are supported: both parser adapters are regression-tested against in-repo fixtures, but both SERP DOMs churn through A/B changes and live-page compatibility is not guaranteed.
 - Mobile SERP DOMs (m.baidu.com / m.sogou.com) differ from desktop; the current selectors are desktop-only. On mobile the injected script is a harmless no-op (0 parsed cards implies no filtering and no badge) until real-device verification is available.
 - Sogou vertical searches (images/videos/WeChat tabs) are out of scope.
+- Parsers try each selector in declared order and take the first candidate with text; the source prefers the visible domain. When a Baidu card has no data-url, the visible 「百家号」 label also feeds the Baijiahao AI-slop rule.
+- A per-item restore lasts until the page genuinely re-renders (pagination or async loading); the extension's own badge and strip updates do not re-trigger filtering.
 - The offline example tests the production classifier on synthetic inputs, not live DOM compatibility or search quality.
 
 Exposing hidden cards for inspection and separately tested search-engine adapters have shipped (a bottom strip with per-item restore; Baidu/Sogou adapters both have fixture regression tests). Mobile adapters and shared custom rules remain future work.

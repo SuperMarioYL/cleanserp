@@ -1,5 +1,18 @@
 # 更新日志 (Changelog)
 
+## [0.4.0] - 2026-11-22
+
+### 修复
+
+- **标题链接兜底顺序失效（整卡静默跳过）**：`serp-dom.ts` 曾把标题候选选择器 `join(",")` 交给 `querySelector`——选择器列表返回文档序最靠前的匹配元素，而不是列表中最先命中的选择器。缩略图/角标链接排在 `h3` 之前的真实卡片会取到空文本锚点，随后被 `if (!title) continue` 整卡丢弃（不分类、不隐藏、计数少算）。百度与搜狗适配器现共用 `firstMatchWithText()`，按声明顺序逐个选择器取第一个文本非空的候选。
+- **搜狗来源选择器与摘要选择器重叠**：`.str_info`/`.str-info` 同时出现在来源与摘要两个候选列表，带摘要的卡片会把摘要文本当成 URL/来源，`hostnameOf()` 得到非域名，付费墙与营销号域名规则无法命中，隐藏列表也把摘要当来源展示。来源候选现只保留域名承载节点（`.citeurl`、`cite`），`.str_info`/`.str-info` 仅作摘要。
+- **百家号 AI 文漏杀**：无 `data-url` 的百度卡片，解析器以可见来源文本「百家号」兜底 URL，而分类器只认 `baijiahao.baidu.com` 域名，导致 AI 列表文被判为可读。现在可见来源含「百家号」同样触发百家号AI文判定；非模板真人文章仍保留。
+- **单条恢复被自身观察器回滚**：搜狗页面（无 `#content_left`）以 `body` 为观察根，单条「显示」会更新折叠条计数文本；该文本变更的 `target` 位于自注入 UI 子树内，但旧判定只看增删节点本身（文本节点无 id ⇒ 外部），于是 400ms 后触发重过滤，把刚恢复的卡片重新隐藏。自身 UI 判定现按变更目标归属，恢复动作不再触发自己的回滚。
+
+### 维护
+
+- 版本 lockstep 升至 0.4.0（`VERSION` / `package.json` / `package-lock.json` / `manifest.json`）；产品站点内容修订号 3→4，能力与限制文案与解析/恢复语义对齐。
+
 ## [0.3.0] - 2026-10-19
 
 ### 修复
@@ -32,6 +45,7 @@
 
 首个发布：百度 SERP 死链分类器（百家号AI文 / 营销号 / 付费墙 / 跳转中间页）+「已过滤 N 条」徽章 + popup 过滤计数 + MV3 打包（load-unpacked）+ 双语 README + 产品站点。
 
+[0.4.0]: https://github.com/SuperMarioYL/cleanserp/releases/tag/v0.4.0
 [0.3.0]: https://github.com/SuperMarioYL/cleanserp/releases/tag/v0.3.0
 [0.2.0]: https://github.com/SuperMarioYL/cleanserp/releases/tag/v0.2.0
 [0.1.0]: https://github.com/SuperMarioYL/cleanserp/releases/tag/v0.1.0

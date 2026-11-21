@@ -11,7 +11,7 @@
   "meta": {
     "visual_style": "neon-particle",
     "demo_source": "docs/demo-results.json",
-    "content_version": 3
+    "content_version": 4
   },
   "hero": {
     "headline": {
@@ -41,8 +41,8 @@
         "zh": "可检查的原因"
       },
       "body": {
-        "en": "Matching results carry a specific rule category.",
-        "zh": "命中结果带有具体规则类别。"
+        "en": "Matching results carry a specific rule category, and hidden results can be restored one at a time.",
+        "zh": "命中结果带有具体规则类别，被隐藏的结果可以逐条恢复。"
       }
     },
     {
@@ -115,6 +115,10 @@
     {
       "en": "The offline example tests the production classifier on synthetic inputs, not live DOM compatibility or search quality.",
       "zh": "离线示例在合成输入上运行生产分类器，不验证实时页面兼容性或搜索质量。"
+    },
+    {
+      "en": "A per-item restore lasts until the page genuinely re-renders (pagination or async loading); the extension's own badge and strip updates do not re-trigger filtering.",
+      "zh": "单条恢复保持到页面真实重渲染（翻页或异步加载）；扩展自身徽章与折叠条的更新不会触发重过滤。"
     }
   ],
   "scene": {
@@ -140,8 +144,8 @@
           "zh": "处理过程"
         },
         "body": {
-          "en": "The content script extracts result fields and calls the pure classify function. Matching cards are hidden and the count is published to the extension UI. The manifest injects the script into www.baidu.com and www.sogou.com pages; engine detection picks the matching parser at runtime.",
-          "zh": "content script 提取结果字段并调用纯函数 classify，隐藏命中卡片，再把计数传给扩展界面。manifest 向百度与搜狗桌面版结果页注入脚本；运行时按引擎自动选择解析器。"
+          "en": "The content script extracts result fields and calls the pure classify function. Matching cards are hidden and the count is published to the extension UI. The manifest injects the script into www.baidu.com and www.sogou.com pages; engine detection picks the matching parser at runtime, and each result field is read through an ordered selector fallback.",
+          "zh": "content script 提取结果字段并调用纯函数 classify，隐藏命中卡片，再把计数传给扩展界面。manifest 向百度与搜狗桌面版结果页注入脚本；运行时按引擎自动选择解析器；每个结果字段按声明顺序逐个选择器取第一个有文本的候选。"
         },
         "image": {
           "light": "/assets/presentation/process-light.svg",
@@ -162,8 +166,8 @@
           "zh": "CleanSERP 的工作方式"
         },
         "body": {
-          "en": "The content script extracts result fields and calls the pure classify function. Matching cards are hidden and the count is published to the extension UI. The manifest injects the script into www.baidu.com and www.sogou.com pages; engine detection picks the matching parser at runtime.",
-          "zh": "content script 提取结果字段并调用纯函数 classify，隐藏命中卡片，再把计数传给扩展界面。manifest 向百度与搜狗桌面版结果页注入脚本；运行时按引擎自动选择解析器。"
+          "en": "The content script extracts result fields and calls the pure classify function. Matching cards are hidden and the count is published to the extension UI. The manifest injects the script into www.baidu.com and www.sogou.com pages; engine detection picks the matching parser at runtime, and each result field is read through an ordered selector fallback.",
+          "zh": "content script 提取结果字段并调用纯函数 classify，隐藏命中卡片，再把计数传给扩展界面。manifest 向百度与搜狗桌面版结果页注入脚本；运行时按引擎自动选择解析器；每个结果字段按声明顺序逐个选择器取第一个有文本的候选。"
         },
         "image": {
           "light": "/assets/presentation/architecture-light.svg",

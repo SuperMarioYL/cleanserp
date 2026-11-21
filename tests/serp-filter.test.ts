@@ -48,8 +48,20 @@ test("百家号 + AI 列表文模板 → 死链 (baijiahao-ai-slop)", () => {
   assert.equal(plan.reasons["baijiahao-ai-slop"], 1);
 });
 
-test("百家号但非 AI 模板文 → 保留 (不误杀真人好文)", () => {
+test("来源标签为「百家号」但 URL 被解析器兜底成标签文本 → 仍判百家号AI文", () => {
+  // 百度卡片没有 data-url 时，解析器把可见来源文本当 url 兜底（source 同值）。
   const r = result({
+    url: "百家号",
+    title: "一文读懂脱发的原因，建议收藏",
+    snippet: "盘点 5 个方法让你告别脱发",
+    source: "百家号",
+  });
+  const plan = planFilter([r]);
+  assert.equal(plan.count, 1);
+  assert.equal(plan.reasons["baijiahao-ai-slop"], 1);
+});
+
+test("百家号但非 AI 模板文 → 保留 (不误杀真人好文)", () => {  const r = result({
     url: "https://baijiahao.baidu.com/s?id=456",
     title: "一个皮肤科医生关于脱发的临床观察",
     snippet: "门诊数据与治疗路径分析",
@@ -241,7 +253,7 @@ test("count=0 的计划：不注入任何 UI，restoreHidden 仍安全（幂等�
   assert.equal(nodes[0].style.display, "");
 });
 
-// ── v0.3.0 fix-1: 观察器自触发死循环的回归钉死 ─────────────────────────
+// ── 上一版本 fix-1: 观察器自触发死循环的回归钉死 ─────────────────────────
 // v0.2 的 MutationObserver 以 document.body 兜底观察（搜狗无 #content_left），
 // 而 executePlan 每轮删旧建新徽章/折叠条——自身 UI 变更被当作页面重渲染，
 // 只要过滤数 >0 就形成 400ms 一次的永久重过滤循环。修复 = 观察器回调先经
@@ -329,4 +341,80 @@ test("executePlan 一轮的真实 childList 变更全部为自身 UI——观察
     false,
     "一轮 executePlan 的全部变更应为自身 UI——否则 root=body 页面死循环",
   );
+});
+
+// ── 自身 UI 内的文本更新不得触发重过滤（单条恢复回滚回归） ────────────
+// 单条恢复按钮会改写折叠条的计数文本；该 Text 变更的 target 在折叠条子树内。
+// 旧判定只看增删节点本身（文本节点无 id ⇒ 外部），于是恢复动作自己触发
+// 400ms 后的重过滤，把刚恢复的卡片重新隐藏。
+
+test("hasForeignMutation：target 位于自身 UI 子树内的文本变更不算页面变更", () => {
+  installDom(0);
+  const strip = document.createElement("div");
+  strip.id = "cleanserp-hidden-strip";
+  const label = document.createElement("span");
+  strip.append(label);
+  document.body.append(strip);
+
+  const added = document.createTextNode("净搜已隐藏 2 条");
+  const removed = document.createTextNode("净搜已隐藏 3 条");
+  assert.equal(
+    hasForeignMutation([{ addedNodes: [added], removedNodes: [removed], target: label }]),
+    false,
+  );
+  assert.equal(
+    hasForeignMutation([{ addedNodes: [added], removedNodes: [], target: document.body }]),
+    true,
+    "页面其他位置的文本变更仍应视为外部变更",
+  );
+});
+
+test("单条恢复点击不被自身观察器判定为页面变更（恢复的卡片保持可见）", async () => {
+  const window = new Window();
+  const doc = window.document as unknown as Document;
+  doc.body.innerHTML = "";
+  const cards = [doc.createElement("div"), doc.createElement("div")];
+  for (const card of cards) doc.body.append(card);
+  (globalThis as Record<string, unknown>).document = doc;
+
+  const records: { addedNodes: Node[]; removedNodes: Node[]; target: Node }[] = [];
+  const OwnObserver = (window as unknown as { MutationObserver: typeof MutationObserver })
+    .MutationObserver;
+  const observer = new OwnObserver((recs) => {
+    for (const r of recs) {
+      records.push({
+        addedNodes: Array.from(r.addedNodes),
+        removedNodes: Array.from(r.removedNodes),
+        target: r.target,
+      });
+    }
+  });
+  observer.observe(doc.body, { childList: true, subtree: true });
+
+  executePlan(
+    planFilter(cards.map((node, i) => ({
+      engine: "baidu" as const,
+      node,
+      title: `站长工具怎么用 ${i}`,
+      url: "https://www.chinaz.com/a",
+      snippet: "",
+      source: "",
+    }))),
+  );
+  const strip = doc.getElementById("cleanserp-hidden-strip")!;
+  const showBtn = strip.querySelector(".cleanserp-hidden-item button") as HTMLElement;
+  showBtn.click(); // 恢复其中一条 → 剩余 1 条，触发 label.textContent 更新
+
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  observer.disconnect();
+
+  assert.ok(records.length > 0, "点击应产生可观察的 childList 变更");
+  assert.equal(
+    hasForeignMutation(records),
+    false,
+    "恢复动作产生的变更全部属于自身 UI，不得再触发重过滤",
+  );
+  assert.equal(cards[0].style.display, "", "被恢复的卡片保持可见");
+  assert.equal(cards[0].hasAttribute("data-cleanserp-hidden"), false);
+  assert.equal(cards[1].style.display, "none", "其余卡片保持隐藏");
 });

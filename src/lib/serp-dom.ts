@@ -53,6 +53,24 @@ function firstText(root: HTMLElement, selectors: string[]): string {
 }
 
 /**
+ * 按声明顺序逐个选择器取第一个文本非空的元素。
+ * 不能用 querySelector(selectors.join(","))：选择器列表返回文档序最靠前的匹配
+ * 元素，而不是列表中最先命中的选择器——缩略图/角标链接排在 h3 之前时兜底
+ * 优先级会被文档顺序打乱，取到空文本锚点后整张卡被跳过。
+ */
+function firstMatchWithText(
+  root: HTMLElement,
+  selectors: string[],
+): HTMLElement | null {
+  for (const sel of selectors) {
+    for (const el of Array.from(root.querySelectorAll(sel)) as HTMLElement[]) {
+      if (el.textContent?.trim()) return el;
+    }
+  }
+  return null;
+}
+
+/**
  * 解析百度 SERP。只读 DOM，返回带 node 引用的结果列表供上层隐藏。
  * 健壮性说明：百度经常把真实 URL 放在容器 data-url/mu 属性或可见 cite 文本里，
  * 而 <a href> 是 baidu.com/link?url= 跳转包装——优先取真实 URL 用于分类。
@@ -64,7 +82,7 @@ export function parseBaiduSerp(doc: Document | HTMLElement): SerpResult[] {
 
   for (const card of cards) {
     // 只保留真正带标题链接的结果卡（过滤掉侧栏/推荐位噪声）
-    const titleLink = card.querySelector(TITLE_LINK_SELECTORS.join(", ")) as
+    const titleLink = firstMatchWithText(card, TITLE_LINK_SELECTORS) as
       | HTMLAnchorElement
       | null;
     if (!titleLink) continue;
@@ -107,8 +125,10 @@ const SOGOU_RESULT_SELECTORS = "div.vrwrap, div.rb";
 // 标题链接选择器（多兜底）：h3 a 为主，带 data-md 属性的链接次之。
 const SOGOU_TITLE_LINK_SELECTORS = ["h3 a", "h3 > a", "a[data-md]", "a"];
 
-// 可见 cite / 来源选择器（多兜底）。
-const SOGOU_SOURCE_SELECTORS = [".citeurl", ".str_info", ".str-info", "cite"];
+// 可见 cite / 来源选择器：只放承载域名的节点。.str_info / .str-info 是摘要
+// 容器，若混入来源候选，带摘要的卡片会把摘要文本当成 URL/来源，域名规则与
+// 隐藏列表的来源标签同时失真。
+const SOGOU_SOURCE_SELECTORS = [".citeurl", "cite"];
 
 // 摘要选择器（多兜底，新旧 class 命名并存）。
 const SOGOU_SNIPPET_SELECTORS = [
@@ -129,7 +149,7 @@ export function parseSogouSerp(doc: Document | HTMLElement): SerpResult[] {
 
   for (const card of cards) {
     // 只保留真正带标题链接的结果卡（过滤掉侧栏/推荐位噪声）
-    const titleLink = card.querySelector(SOGOU_TITLE_LINK_SELECTORS.join(", ")) as
+    const titleLink = firstMatchWithText(card, SOGOU_TITLE_LINK_SELECTORS) as
       | HTMLAnchorElement
       | null;
     if (!titleLink) continue;

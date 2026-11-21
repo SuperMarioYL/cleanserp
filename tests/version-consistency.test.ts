@@ -18,8 +18,8 @@ import { join, relative, extname } from "node:path";
 const root = process.cwd();
 const read = (p: string): string => readFileSync(join(root, p), "utf8");
 
-const EXPECTED_VERSION = "0.3.0";
-const OLD_VERSION = ["0", "2", "0"].join(".");
+const EXPECTED_VERSION = "0.4.0";
+const OLD_VERSION = ["0", "3", "0"].join(".");
 
 test("VERSION / package.json / manifest.json 三表面一致为当前发布版本", () => {
   assert.equal(read("VERSION").trim(), EXPECTED_VERSION);
@@ -31,9 +31,9 @@ test("VERSION / package.json / manifest.json 三表面一致为当前发布版�
   assert.equal(manifest.version, EXPECTED_VERSION);
 });
 
-test("web/site.json meta.content_version 为数字 3（类型保持的数字修订号）", () => {
+test("web/site.json meta.content_version 为数字 4（类型保持的数字修订号）", () => {
   const site = JSON.parse(read("web/site.json"));
-  assert.equal(site.meta.content_version, 3);
+  assert.equal(site.meta.content_version, 4);
 });
 
 test("CHANGELOG.md 同时含上一版本与当前版本两个小节", () => {

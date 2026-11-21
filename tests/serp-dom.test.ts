@@ -145,3 +145,72 @@ test("parseBaiduSerp + planFilter：恰好隐藏营销号与百家号AI文 2 条
   assert.equal(plan.reasons["baijiahao-ai-slop"], 1);
   assert.equal(plan.kept.length, 1);
 });
+
+// ── 解析兜底优先级（回归：join(",") 的 querySelector 按文档序而非列表序） ──
+
+test("parseBaiduSerp：缩略图 <a> 在 <h3> 之前时仍取标题链接，整卡不被跳过", () => {
+  const doc = domOf(`
+    <div id="content_left">
+      <div class="result c-container" data-url="https://www.yixieshi.com/p/1">
+        <a class="pic" href="https://www.yixieshi.com/p/1"><img src="thumb.png" alt=""></a>
+        <h3><a href="https://www.baidu.com/link?url=x">脱发怎么办</a></h3>
+        <div class="c-abstract">这些方法帮你</div>
+        <span class="c-showurl">yixieshi.com</span>
+      </div>
+    </div>`);
+  const results = parseBaiduSerp(doc);
+
+  assert.equal(results.length, 1, "缩略图链接在前不应让整卡消失");
+  assert.equal(results[0].title, "脱发怎么办");
+  assert.equal(planFilter(results).reasons["yingxiaohao"], 1);
+});
+
+test("parseSogouSerp：缩略图 <a> 在 <h3> 之前时仍取标题链接，整卡不被跳过", () => {
+  const doc = domOf(`
+    <div class="results">
+      <div class="vrwrap">
+        <a class="pic" href="https://www.sogou.com/link?url=x"><img src="thumb.png" alt=""></a>
+        <h3><a href="https://www.chinaz.com/a/1.html">站长工具怎么用</a></h3>
+        <div class="str_text_info">帮你查数据</div>
+        <div class="citeurl">chinaz.com</div>
+      </div>
+    </div>`);
+  const results = parseSogouSerp(doc);
+
+  assert.equal(results.length, 1, "缩略图链接在前不应让整卡消失");
+  assert.equal(results[0].title, "站长工具怎么用");
+});
+
+test("parseSogouSerp：摘要 .str_info 不再抢占 cite 域名（url/source 取域名，付费墙规则生效）", () => {
+  const doc = domOf(`
+    <div class="results">
+      <div class="rb">
+        <h3><a href="https://www.sogou.com/link?url=x">36氪深度报道</a></h3>
+        <div class="str_info">产业观察正文摘要</div>
+        <cite>36kr.com</cite>
+      </div>
+    </div>`);
+  const results = parseSogouSerp(doc);
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].url, "36kr.com");
+  assert.equal(results[0].source, "36kr.com");
+  assert.equal(results[0].snippet, "产业观察正文摘要");
+  assert.equal(planFilter(results).reasons["paywall"], 1);
+});
+
+test("parseBaiduSerp：无 data-url、来源标签为「百家号」的 AI 列表文卡片被隐藏", () => {
+  const doc = domOf(`
+    <div id="content_left">
+      <div class="result c-container">
+        <h3><a href="https://www.baidu.com/link?url=x">一文读懂脱发，建议收藏</a></h3>
+        <div class="c-abstract">盘点 5 个方法让你告别脱发</div>
+        <span class="c-showurl">百家号</span>
+      </div>
+    </div>`);
+  const results = parseBaiduSerp(doc);
+
+  assert.equal(results.length, 1);
+  assert.equal(results[0].source, "百家号");
+  assert.equal(planFilter(results).reasons["baijiahao-ai-slop"], 1);
+});
